@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор отчетов художников</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+
+    <header>
+        <h1>🎨 Генератор отчета художника</h1>
+        <p>Заполните поля и получите готовый BBCode.</p>
+    </header>
+
+    <section class="main-info">
+
+        <div class="field">
+            <label>ID художника</label>
+            <input
+                type="number"
+                id="artistId"
+                placeholder="Например: 1601504">
+        </div>
+
+        <div class="field">
+            <label>Фракция</label>
+            <input
+                type="text"
+                id="faction"
+                placeholder="Клан Падающей Воды">
+        </div>
+
+        <div class="field">
+            <label>Описание работы</label>
+            <input
+                type="text"
+                id="description"
+                placeholder="2 костюма на 2 стадии и 1 фон">
+        </div>
+
+    </section>
+
+    <hr>
+
+    <section>
+
+        <div class="section-header">
+            <h2>Разделы</h2>
+
+            <button id="addSectionBtn">
+                ➕ Добавить раздел
+            </button>
+
+        </div>
+
+        <div id="sectionsContainer">
+
+            <!-- Сюда JS будет добавлять разделы -->
+
+        </div>
+
+    </section>
+
+    <hr>
+
+    <section class="buttons">
+
+        <button id="generateBtn">
+            ⚙ Сгенерировать BBCode
+        </button>
+
+        <button id="copyBtn">
+            📋 Копировать
+        </button>
+
+        <button id="downloadBtn">
+            💾 Скачать .txt
+        </button>
+
+        <button id="clearBtn" class="danger">
+            🗑 Очистить всё
+        </button>
+
+    </section>
+
+    <section class="preview">
+
+        <h2>Предпросмотр BBCode</h2>
+
+        <textarea
+            id="output"
+            readonly
+            placeholder="Здесь появится готовый BBCode..."></textarea>
+
+    </section>
+
+</div>
+
+<!-- ======================================================= -->
+<!-- ШАБЛОН РАЗДЕЛА -->
+<!-- ======================================================= -->
+
+<template id="sectionTemplate">
+
+    <div class="report-section">
+
+        <div class="section-top">
+
+            <input
+                type="text"
+                class="section-title"
+                placeholder="Название раздела">
+
+            <button class="delete-section">
+                🗑 Удалить раздел
+            </button>
+
+        </div>
+
+        <div class="works-container">
+
+        </div>
+
+        <button class="add-work">
+            ➕ Добавить работу
+        </button>
+
+    </div>
+
+</template>
+
+<!-- ======================================================= -->
+<!-- ШАБЛОН РАБОТЫ -->
+<!-- ======================================================= -->
+
+<template id="workTemplate">
+
+    <div class="work-card">
+
+        <div class="work-number">
+            Работа
+        </div>
+
+        <div class="field">
+
+            <label>Ссылка на изображение</label>
+
+            <input
+                type="text"
+                class="image-link"
+                placeholder="https://...">
+
+        </div>
+
+        <div class="field">
+
+            <label>Доказательство (необязательно)</label>
+
+            <input
+                type="text"
+                class="proof-link"
+                placeholder="https://...">
+
+        </div>
+
+        <button class="delete-work">
+            🗑 Удалить работу
+        </button>
+
+    </div>
+
+</template>
+
+<script src="script.js"></script>
+
+</body>
+</html>
