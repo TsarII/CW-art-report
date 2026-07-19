@@ -1283,3 +1283,376 @@ console.log(
     "CW Art Report Generator успешно загружен."
 
 );
+
+// =====================================================
+// ВИЗУАЛЬНЫЙ ПРЕДПРОСМОТР ВСЕГО ОТЧЁТА
+// =====================================================
+
+function escapePreviewText(text) {
+
+    const div = document.createElement("div");
+
+    div.textContent = text;
+
+    return div.innerHTML;
+
+}
+
+
+
+// =====================================================
+// Создание окна предпросмотра
+// =====================================================
+
+function createReportPreviewModal() {
+
+    let modal =
+        document.getElementById("reportPreviewModal");
+
+    if (modal) {
+
+        return modal;
+
+    }
+
+    modal = document.createElement("div");
+
+    modal.id = "reportPreviewModal";
+
+    modal.style.position = "fixed";
+    modal.style.inset = "0";
+    modal.style.background = "rgba(0, 0, 0, 0.75)";
+    modal.style.zIndex = "9999";
+    modal.style.display = "none";
+    modal.style.overflowY = "auto";
+    modal.style.padding = "30px";
+    modal.style.boxSizing = "border-box";
+
+    modal.innerHTML = `
+
+        <div
+            id="reportPreviewWindow"
+            style="
+                max-width: 1100px;
+                margin: 0 auto;
+                background: #ffffff;
+                border-radius: 16px;
+                padding: 30px;
+                box-sizing: border-box;
+            "
+        >
+
+            <div
+                style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    gap: 20px;
+                    margin-bottom: 25px;
+                "
+            >
+
+                <h2 style="margin: 0;">
+                    Предпросмотр отчёта
+                </h2>
+
+                <button
+                    id="closeReportPreview"
+                    type="button"
+                >
+                    ✕ Закрыть
+                </button>
+
+            </div>
+
+            <div
+                id="visualReportContent"
+            ></div>
+
+        </div>
+
+    `;
+
+    document.body.appendChild(modal);
+
+    document
+        .getElementById("closeReportPreview")
+        .addEventListener("click", () => {
+
+            modal.style.display = "none";
+
+        });
+
+    modal.addEventListener("click", event => {
+
+        if (event.target === modal) {
+
+            modal.style.display = "none";
+
+        }
+
+    });
+
+    return modal;
+
+}
+
+
+
+// =====================================================
+// Генерация визуального отчёта
+// =====================================================
+
+function generateVisualReport() {
+
+    const data = collectData();
+
+    let html = "";
+
+    html += `
+
+        <div
+            style="
+                font-size: 18px;
+                line-height: 1.6;
+                margin-bottom: 30px;
+            "
+        >
+            <b>[link${escapePreviewText(data.artistId)}]</b>
+            (${escapePreviewText(data.artistId)})
+            нарисовал в
+            <b>${escapePreviewText(data.faction)}</b>
+            ${escapePreviewText(data.description)}.
+            Прошу выдать баллы за работу:
+        </div>
+
+    `;
+
+
+    data.sections.forEach(section => {
+
+        if (!section.title) {
+
+            return;
+
+        }
+
+        html += `
+
+            <h3
+                style="
+                    text-align: center;
+                    margin-top: 30px;
+                    margin-bottom: 20px;
+                "
+            >
+                ${escapePreviewText(section.title)}
+            </h3>
+
+        `;
+
+        html += `
+
+            <div
+                style="
+                    display: grid;
+                    grid-template-columns:
+                        repeat(auto-fit, minmax(180px, 1fr));
+                    gap: 15px;
+                    margin-bottom: 35px;
+                "
+            >
+
+        `;
+
+
+        section.works.forEach((work, index) => {
+
+            if (!work.image) {
+
+                return;
+
+            }
+
+            html += `
+
+                <div
+                    style="
+                        border: 1px solid #dcdcdc;
+                        border-radius: 12px;
+                        padding: 12px;
+                        background: #fafafa;
+                        box-sizing: border-box;
+                    "
+                >
+
+                    <div
+                        style="
+                            font-weight: bold;
+                            margin-bottom: 10px;
+                        "
+                    >
+                        ${index + 1}.
+                    </div>
+
+                    <img
+                        src="${escapePreviewText(work.image)}"
+                        alt="Работа ${index + 1}"
+                        style="
+                            width: 100%;
+                            max-height: 220px;
+                            object-fit: contain;
+                            border-radius: 8px;
+                            display: block;
+                            background: #eeeeee;
+                            cursor: pointer;
+                        "
+                        onerror="
+                            this.style.display='none';
+                            this.nextElementSibling.style.display='block';
+                        "
+                        onclick="
+                            window.open(this.src, '_blank');
+                        "
+                    >
+
+                    <div
+                        style="
+                            display: none;
+                            padding: 20px 5px;
+                            text-align: center;
+                            color: #c0392b;
+                        "
+                    >
+                        ❌ Изображение не загрузилось
+                    </div>
+
+                    <div
+                        style="
+                            margin-top: 10px;
+                            font-size: 12px;
+                            word-break: break-all;
+                        "
+                    >
+                        ${escapePreviewText(work.image)}
+                    </div>
+
+                    ${
+                        work.proof
+                        ?
+                        `
+                            <div
+                                style="
+                                    margin-top: 10px;
+                                    font-size: 13px;
+                                "
+                            >
+                                <b>Доказательство:</b><br>
+
+                                <a
+                                    href="${escapePreviewText(work.proof)}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    ${escapePreviewText(work.proof)}
+                                </a>
+                            </div>
+                        `
+                        :
+                        ""
+                    }
+
+                </div>
+
+            `;
+
+        });
+
+        html += `</div>`;
+
+    });
+
+
+    return html;
+
+}
+
+
+
+// =====================================================
+// Открыть предпросмотр
+// =====================================================
+
+function openVisualReportPreview() {
+
+    const modal =
+        createReportPreviewModal();
+
+    const content =
+        document.getElementById("visualReportContent");
+
+    content.innerHTML =
+        generateVisualReport();
+
+    modal.style.display = "block";
+
+}
+
+
+
+// =====================================================
+// Создание кнопки предпросмотра
+// =====================================================
+
+function createPreviewButton() {
+
+    if (
+        document.getElementById(
+            "visualPreviewButton"
+        )
+    ) {
+
+        return;
+
+    }
+
+    const button =
+        document.createElement("button");
+
+    button.id =
+        "visualPreviewButton";
+
+    button.type =
+        "button";
+
+    button.textContent =
+        "👀 Предпросмотр отчёта";
+
+    button.style.marginTop =
+        "10px";
+
+    button.addEventListener(
+        "click",
+        openVisualReportPreview
+    );
+
+
+    if (output && output.parentElement) {
+
+        output.parentElement.appendChild(button);
+
+    }
+
+}
+
+
+
+// =====================================================
+// Запуск предпросмотра
+// =====================================================
+
+window.addEventListener("DOMContentLoaded", () => {
+
+    createPreviewButton();
+
+});
