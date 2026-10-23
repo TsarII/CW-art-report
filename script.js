@@ -22,7 +22,7 @@ const COSTUME_STAGES = [
     { key: "drink", number: 3, label: "Питьё", path: "5" },
     { key: "kitten", number: 4, label: "Котёнок", path: "-1" }
 ];
-const ID_BASED_TYPES = new Set(["Предмет", "Медаль", "Костюм актера", "Фон"]);
+const ID_BASED_TYPES = new Set(["Предмет", "Медаль", "Костюм актера", "Костюм бота", "Фон"]);
 
 function imageUrlFromId(type, id, stageKey = "static") {
     const cleanId = String(id || "").trim();
@@ -34,6 +34,7 @@ function imageUrlFromId(type, id, stageKey = "static") {
         const stage = COSTUME_STAGES.find(item => item.key === stageKey) || COSTUME_STAGES[0];
         return `https://catwar.net/cw3/cats/${stage.path}/costume/${cleanId}.png`;
     }
+    if (type === "Костюм бота") return `https://catwar.net/cw3/cats/0/costume/${cleanId}.png`;
     return "";
 }
 
@@ -428,7 +429,8 @@ function buildDescription(data) {
                 byStageCount.set(stageCount, (byStageCount.get(stageCount) || 0) + 1);
             });
             [...byStageCount.entries()].sort((a, b) => a[0] - b[0]).forEach(([stageCount, count]) => {
-                parts.push(`${count} ${getCountForm(count, forms)} на ${stageCount} ${stageCount === 1 ? "стадии" : "стадии"}`);
+                const stageForm = stageCount === 1 ? "стадию" : (stageCount >= 2 && stageCount <= 4 ? "стадии" : "стадий");
+                parts.push(`${count} ${getCountForm(count, forms)} на ${stageCount} ${stageForm}`);
             });
             return;
         }
