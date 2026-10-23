@@ -4,178 +4,142 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Генератор отчетов художников</title>
-
     <link rel="stylesheet" href="style.css">
+    <style>
+        [hidden] { display: none !important; }
+        .section-top { display: flex; align-items: end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        .section-type-field { flex: 1; min-width: 220px; }
+        .custom-section-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 12px 0; }
+        .visual-report-content { margin-top: 18px; }
+        .visual-report-intro { line-height: 1.6; margin-bottom: 24px; }
+        .visual-section-title { text-align: center; margin: 28px 0 16px; }
+        .visual-works-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 28px; }
+        .visual-work-card { min-width: 0; border: 1px solid #dcdcdc; border-radius: 12px; padding: 12px; background: #fff; overflow-wrap: anywhere; }
+        .visual-work-card img { display: block; width: 100%; max-height: 240px; object-fit: contain; margin-top: 10px; border-radius: 8px; background: #f2f2f2; }
+        .visual-work-card p { margin: 10px 0 0; font-size: .9em; }
+        .visual-work-card a { overflow-wrap: anywhere; }
+        .image-preview-wrap img { cursor: pointer; }
+        @media (max-width: 600px) {
+            .section-top { align-items: stretch; }
+            .section-type-field { min-width: 100%; }
+            .visual-works-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        }
+    </style>
+
 </head>
 <body>
-
 <div class="container">
-
     <header>
-        <h1>🎨 Генератор отчета художника</h1>
-        <p>Заполните поля и получите готовый BBCode.</p>
+        <h1>🎨 Генератор отчёта художника</h1>
+        <p>Заполни поля и получи готовый BBCode для отчёта.</p>
     </header>
 
     <section class="main-info">
-
         <div class="field">
-            <label>ID художника</label>
-            <input
-                type="number"
-                id="artistId"
-                placeholder="Например: 1601504">
+            <label for="artistId">ID художника</label>
+            <input type="number" id="artistId" placeholder="Например: 1601504">
         </div>
-
         <div class="field">
-            <label>Фракция</label>
-            <input
-                type="text"
-                id="faction"
-                placeholder="Клан Падающей Воды">
+            <label for="faction">Фракция</label>
+            <input type="text" id="faction" value="Клан Падающей Воды">
         </div>
-
         <div class="field">
-            <label>Описание работы</label>
-            <input
-                type="text"
-                id="description"
-                placeholder="2 костюма на 2 стадии и 1 фон">
+            <label for="description">Описание работы (формируется автоматически)</label>
+            <input type="text" id="description" readonly placeholder="Появится, когда добавишь работы">
         </div>
-
     </section>
 
     <hr>
 
     <section>
-
         <div class="section-header">
-            <h2>Разделы</h2>
-
-            <button id="addSectionBtn">
-                ➕ Добавить раздел
-            </button>
-
+            <h2>Работы</h2>
+            <button id="addSectionBtn" type="button">➕ Добавить раздел</button>
         </div>
-
-        <div id="sectionsContainer">
-
-            <!-- Сюда JS будет добавлять разделы -->
-
-        </div>
-
+        <div id="sectionsContainer"></div>
     </section>
 
     <hr>
 
+    <section class="visual-preview">
+        <h2>Предпросмотр отчёта</h2>
+        <p>Так будет выглядеть отчёт с изображениями.</p>
+        <div id="visualReportContent" class="visual-report-content"></div>
+    </section>
+
     <section class="buttons">
-
-        <button id="generateBtn">
-            ⚙ Сгенерировать BBCode
-        </button>
-
-        <button id="copyBtn">
-            📋 Копировать
-        </button>
-
-        <button id="downloadBtn">
-            💾 Скачать .txt
-        </button>
-
-        <button id="clearBtn" class="danger">
-            🗑 Очистить всё
-        </button>
-
+        <button id="generateBtn" type="button">⚙ Обновить BBCode</button>
+        <button id="copyBtn" type="button">📋 Копировать</button>
+        <button id="downloadBtn" type="button">💾 Скачать .txt</button>
+        <button id="clearBtn" class="danger" type="button">🗑 Очистить всё</button>
     </section>
 
     <section class="preview">
-
-        <h2>Предпросмотр BBCode</h2>
-
-        <textarea
-            id="output"
-            readonly
-            placeholder="Здесь появится готовый BBCode..."></textarea>
-
+        <h2>Готовый BBCode</h2>
+        <textarea id="output" readonly placeholder="Здесь появится готовый BBCode..."></textarea>
     </section>
-
 </div>
 
-<!-- ======================================================= -->
-<!-- ШАБЛОН РАЗДЕЛА -->
-<!-- ======================================================= -->
-
 <template id="sectionTemplate">
-
     <div class="report-section">
-
         <div class="section-top">
-
-            <input
-                type="text"
-                class="section-title"
-                placeholder="Название раздела">
-
-            <button class="delete-section">
-                🗑 Удалить раздел
-            </button>
-
+            <div class="field section-type-field">
+                <label>Тип раздела</label>
+                <select class="section-type">
+                    <option value="Предмет">Предмет / Предметы</option>
+                    <option value="Медаль">Медаль / Медали</option>
+                    <option value="Костюм актера">Костюм актера / Костюмы актеров</option>
+                    <option value="Костюм бота">Костюм бота / Костюмы ботов</option>
+                    <option value="Фон">Фон / Фоны</option>
+                    <option value="Украшение фона">Украшение фона / Украшения фонов</option>
+                    <option value="Шапка в блог">Шапка в блог / Шапки в блоги</option>
+                    <option value="Иллюстрация">Иллюстрация / Иллюстрации</option>
+                    <option value="custom">Свой раздел</option>
+                </select>
+            </div>
+            <button class="delete-section" type="button">🗑 Удалить раздел</button>
         </div>
 
-        <div class="works-container">
-
+        <div class="custom-section-fields" hidden>
+            <div class="field">
+                <label>Название раздела (для заголовка)</label>
+                <input type="text" class="custom-title" placeholder="Например: Портрет персонажа">
+            </div>
+            <div class="field">
+                <label>Название одной работы для описания</label>
+                <input type="text" class="custom-singular" placeholder="Например: портрет">
+            </div>
+            <div class="field">
+                <label>Название нескольких работ для описания</label>
+                <input type="text" class="custom-plural" placeholder="Например: портрета">
+            </div>
         </div>
 
-        <button class="add-work">
-            ➕ Добавить работу
-        </button>
-
+        <div class="works-container"></div>
+        <button class="add-work" type="button">➕ Добавить работу</button>
     </div>
-
 </template>
 
-<!-- ======================================================= -->
-<!-- ШАБЛОН РАБОТЫ -->
-<!-- ======================================================= -->
-
 <template id="workTemplate">
-
     <div class="work-card">
-
-        <div class="work-number">
-            Работа
-        </div>
-
+        <div class="work-number">Работа № 1</div>
         <div class="field">
-
             <label>Ссылка на изображение</label>
-
-            <input
-                type="text"
-                class="image-link"
-                placeholder="https://...">
-
+            <input type="text" class="image-link" placeholder="Вставь прямую ссылку или код с изображением">
+            <div class="image-preview-wrap"></div>
         </div>
-
+        <div class="field original-field" hidden>
+            <label>Оригинал (необязательно)</label>
+            <input type="text" class="original-link" placeholder="Ссылка на оригинал">
+        </div>
         <div class="field">
-
             <label>Доказательство (необязательно)</label>
-
-            <input
-                type="text"
-                class="proof-link"
-                placeholder="https://...">
-
+            <input type="text" class="proof-link" placeholder="Ссылка на доказательство">
         </div>
-
-        <button class="delete-work">
-            🗑 Удалить работу
-        </button>
-
+        <button class="delete-work" type="button">🗑 Удалить работу</button>
     </div>
-
 </template>
 
 <script src="script.js"></script>
-
 </body>
 </html>
