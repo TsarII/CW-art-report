@@ -336,3 +336,108 @@ textarea:focus {
 .stage-option input[type="checkbox"]:disabled {
     cursor: not-allowed;
 }
+
+/* Тёмная тема Midnight Oil — Black Pearl — Salsa Mexicana */
+:root {
+    color-scheme: dark;
+    --page-bg: #0A0F12;
+    --panel-bg: #20292D;
+    --card-bg: #394045;
+    --control-bg: #565A5C;
+    --text-main: #B5A295;
+    --text-muted: #907768;
+    --accent: #A33715;
+    --accent-hover: #bd4520;
+    --border-color: #394045;
+}
+
+body {
+    background: var(--page-bg) !important;
+    color: var(--text-main) !important;
+}
+
+header h1 { color: var(--accent) !important; }
+header p,
+.visual-preview > p { color: var(--text-muted) !important; }
+
+.report-section,
+.visual-report-content {
+    background: var(--panel-bg) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .22) !important;
+}
+
+.work-card,
+.stage-checkboxes {
+    background: var(--card-bg) !important;
+    color: var(--text-main) !important;
+    border-color: #565A5C !important;
+}
+
+input,
+select,
+textarea,
+.preview textarea {
+    background: var(--control-bg) !important;
+    color: #F0E5DE !important;
+    border-color: #6b6b6b !important;
+}
+
+input::placeholder,
+textarea::placeholder { color: #c1b1a7 !important; opacity: .75; }
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgba(163, 55, 21, .22) !important;
+}
+input[readonly] {
+    background: #30383c !important;
+    color: var(--text-main) !important;
+}
+
+hr { border-top-color: #394045 !important; }
+.work-number { color: #D86A43 !important; }
+
+#addSectionBtn,
+.add-work,
+#generateBtn {
+    background: var(--accent) !important;
+    color: #fff3ed !important;
+}
+#addSectionBtn:hover,
+.add-work:hover,
+#generateBtn:hover { background: var(--accent-hover) !important; }
+
+#copyBtn {
+    background: #907768 !important;
+    color: #0A0F12 !important;
+}
+#downloadBtn {
+    background: #565A5C !important;
+    color: #F0E5DE !important;
+    border: 1px solid #907768;
+}
+.delete-work,
+.delete-section,
+.danger {
+    background: #6f2b20 !important;
+    color: #ffe8df !important;
+}
+
+.visual-work-card {
+    background: var(--card-bg) !important;
+    color: #F0E5DE !important;
+    border-color: #565A5C !important;
+}
+.visual-work-card img {
+    background: #20292D !important;
+}
+.visual-work-card a { color: #e07a54 !important; }
+.stage-option { color: var(--text-main) !important; }
+.stage-option input[type="checkbox"] { accent-color: var(--accent) !important; }
+
+@media (max-width: 700px) {
+    body { padding: 16px !important; }
+}
