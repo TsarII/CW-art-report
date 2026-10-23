@@ -382,7 +382,7 @@ function getFilledWorks(section) {
                         ...work,
                         image: imageUrlFromId(section.type, work.id, stage.key),
                         stageNumber: stage.number,
-                        stageLabel: `${stage.number}. ${stage.label}`
+                        stageKey: stage.key
                     });
                 });
             } else {
@@ -413,6 +413,26 @@ function buildDescription(data) {
             ? { one: section.customSingular, few: section.customPlural, many: section.customPlural }
             : SECTION_INFO[section.type];
         if (!forms || !forms.one || !forms.few || !forms.many) return;
+
+        // Костюмы актёров группируются по количеству выбранных стадий.
+        // Каждый ID считается одним костюмом, даже если у него несколько стадий.
+        if (section.type === "Костюм актера") {
+            const byStageCount = new Map();
+            works.forEach(work => {
+                const selectedStages = work.stages && work.stages.length
+                    ? work.stages
+                    : ["static"];
+                const stageCount = selectedStages.includes("static")
+                    ? selectedStages.length
+                    : selectedStages.length + 1;
+                byStageCount.set(stageCount, (byStageCount.get(stageCount) || 0) + 1);
+            });
+            [...byStageCount.entries()].sort((a, b) => a[0] - b[0]).forEach(([stageCount, count]) => {
+                parts.push(`${count} ${getCountForm(count, forms)} на ${stageCount} ${stageCount === 1 ? "стадии" : "стадии"}`);
+            });
+            return;
+        }
+
         parts.push(`${works.length} ${getCountForm(works.length, forms)}`);
     });
     if (parts.length <= 1) return parts.join("");
@@ -462,7 +482,7 @@ function generateBBCode(data) {
 }
 
 function makeWorkCell(work, number) {
-    const heading = work.stageLabel ? work.stageLabel : `${number}.`;
+    const heading = `${number}.`;
     let cell = `[td]${heading} [img]${work.image}[/img]\n\n[url]${work.image}[/url]`;
     if (work.original) cell += `\n\nОригинал: [url]${work.original}[/url]`;
     if (work.proof) cell += `\n\nДоказательство: [url]${work.proof}[/url]`;
@@ -482,7 +502,7 @@ function generateVisualReport(data) {
         works.forEach((work, index) => {
             const imageUrl = work.image;
             html += `<article class="visual-work-card">
-                <b>${escapeHTML(work.stageLabel || `${index + 1}.`)}</b>
+                <b>${index + 1}.</b>
                 <a href="${escapeHTML(imageUrl)}" target="_blank" rel="noopener noreferrer">
                     <img src="${escapeHTML(imageUrl)}" alt="Работа ${index + 1}" onerror="this.style.display='none';this.nextElementSibling.hidden=false">
                 </a>
