@@ -359,11 +359,11 @@ function generateBBCode(data) {
                 });
                 bb += "[/tr]";
             }
-            bb += "[/table][/center]\\n\\n";
+            bb += "[/table][/center]\n\n";
         } else {
             bb += "[center][table][tr]";
             works.forEach((work, index) => { bb += makeWorkCell(work, index + 1); });
-            bb += "[/tr][/table][/center]\\n\\n";
+            bb += "[/tr][/table][/center]\n\n";
         }
     });
     return bb.trim();
