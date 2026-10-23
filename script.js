@@ -16,6 +16,27 @@ const sectionTemplate = document.getElementById("sectionTemplate");
 const workTemplate = document.getElementById("workTemplate");
 const STORAGE_KEY = "cwArtReportGenerator";
 
+const COSTUME_STAGES = [
+    { key: "static", number: 1, label: "Статика / бот", path: "0" },
+    { key: "sleep", number: 2, label: "Сон", path: "1" },
+    { key: "drink", number: 3, label: "Питьё", path: "5" },
+    { key: "kitten", number: 4, label: "Котёнок", path: "-1" }
+];
+const ID_BASED_TYPES = new Set(["Предмет", "Медаль", "Костюм актера", "Фон"]);
+
+function imageUrlFromId(type, id, stageKey = "static") {
+    const cleanId = String(id || "").trim();
+    if (!cleanId) return "";
+    if (type === "Предмет") return `https://catwar.net/cw3/things/${cleanId}.png`;
+    if (type === "Медаль") return `https://catwar.net/medal/${cleanId}.png`;
+    if (type === "Фон") return `https://catwar.net/cw3/spacoj/${cleanId}.jpg`;
+    if (type === "Костюм актера") {
+        const stage = COSTUME_STAGES.find(item => item.key === stageKey) || COSTUME_STAGES[0];
+        return `https://catwar.net/cw3/cats/${stage.path}/costume/${cleanId}.png`;
+    }
+    return "";
+}
+
 const SECTION_INFO = {
     "Предмет": {
         heading: "Предмет",
@@ -194,6 +215,7 @@ function createSection(data = null) {
         section.querySelectorAll(".work-card").forEach(work => {
             const originalField = work.querySelector(".original-field");
             if (originalField) originalField.hidden = !SECTION_INFO[typeSelect.value]?.original;
+            updateWorkType(work, typeSelect.value);
         });
         refresh();
     }
@@ -233,9 +255,27 @@ function createSection(data = null) {
     return section;
 }
 
+function updateWorkType(work, sectionType) {
+    const idField = work.querySelector(".id-field");
+    const idInput = work.querySelector(".work-id");
+    const imageField = work.querySelector(".image-field");
+    const stagesField = work.querySelector(".costume-stages-field");
+    const isIdBased = ID_BASED_TYPES.has(sectionType);
+    idField.hidden = !isIdBased;
+    imageField.hidden = isIdBased;
+    stagesField.hidden = sectionType !== "Костюм актера";
+    idInput.placeholder = sectionType === "Костюм актера" ? "ID костюма" : "Введи ID";
+    if (sectionType === "Костюм актера") {
+        const staticBox = work.querySelector('[data-stage="static"]');
+        staticBox.checked = true;
+        staticBox.disabled = true;
+    }
+}
+
 function createWork(container, data = null, sectionType = "") {
     const work = workTemplate.content.firstElementChild.cloneNode(true);
     const imageInput = work.querySelector(".image-link");
+    const idInput = work.querySelector(".work-id");
     const proofInput = work.querySelector(".proof-link");
     const originalInput = work.querySelector(".original-link");
     const originalField = work.querySelector(".original-field");
@@ -243,27 +283,50 @@ function createWork(container, data = null, sectionType = "") {
 
     if (data) {
         imageInput.value = data.image || "";
+        idInput.value = data.id || "";
         proofInput.value = data.proof || "";
         originalInput.value = data.original || "";
+        work.querySelectorAll(".stage-checkbox").forEach(box => {
+            if (box.dataset.stage === "static") box.checked = true;
+            else box.checked = data.stages ? data.stages.includes(box.dataset.stage) : false;
+        });
     }
     originalField.hidden = !SECTION_INFO[sectionType]?.original;
+    updateWorkType(work, sectionType);
+
+    function getPreviewUrls() {
+        if (ID_BASED_TYPES.has(sectionType)) {
+            if (sectionType === "Костюм актера") {
+                return COSTUME_STAGES.filter(stage => work.querySelector(`[data-stage="${stage.key}"]`).checked)
+                    .map(stage => imageUrlFromId(sectionType, idInput.value, stage.key)).filter(Boolean);
+            }
+            const url = imageUrlFromId(sectionType, idInput.value);
+            return url ? [url] : [];
+        }
+        const url = extractImageUrl(imageInput.value);
+        return url && /^https?:\/\//i.test(url) ? [url] : [];
+    }
 
     function updatePreview() {
         previewWrap.innerHTML = "";
-        const url = extractImageUrl(imageInput.value);
-        if (!url || !/^https?:\/\//i.test(url)) return;
-        const img = document.createElement("img");
-        img.className = "image-preview";
-        img.src = url;
-        img.alt = "Предпросмотр работы";
-        img.style.cssText = "display:block;max-width:180px;max-height:180px;object-fit:contain;margin-top:10px;border-radius:8px;";
-        img.onerror = () => { img.remove(); };
-        img.addEventListener("click", () => window.open(url, "_blank", "noopener"));
-        img.style.cursor = "pointer";
-        previewWrap.appendChild(img);
+        getPreviewUrls().forEach((url, index) => {
+            const img = document.createElement("img");
+            img.className = "image-preview";
+            img.src = url;
+            img.alt = sectionType === "Костюм актера" ? `Стадия ${index + 1}` : "Предпросмотр работы";
+            img.style.cssText = "display:inline-block;max-width:180px;max-height:180px;object-fit:contain;margin:10px 8px 0 0;border-radius:8px;";
+            img.onerror = () => { img.remove(); };
+            img.addEventListener("click", () => window.open(url, "_blank", "noopener"));
+            img.style.cursor = "pointer";
+            previewWrap.appendChild(img);
+        });
     }
 
-    [imageInput, proofInput, originalInput].forEach(input => input.addEventListener("input", () => {
+    [imageInput, idInput, proofInput, originalInput].forEach(input => input.addEventListener("input", () => {
+        updatePreview();
+        refreshAndSave();
+    }));
+    work.querySelectorAll(".stage-checkbox").forEach(box => box.addEventListener("change", () => {
         updatePreview();
         refreshAndSave();
     }));
@@ -279,7 +342,6 @@ function createWork(container, data = null, sectionType = "") {
     updatePreview();
     return work;
 }
-
 function updateWorkNumbers(container) {
     container.querySelectorAll(".work-card").forEach((work, index) => {
         work.querySelector(".work-number").textContent = `Работа № ${index + 1}`;
@@ -295,6 +357,8 @@ function collectData() {
         customPlural: section.querySelector(".custom-plural").value.trim(),
         works: [...section.querySelectorAll(".work-card")].map(work => ({
             image: work.querySelector(".image-link").value.trim(),
+            id: work.querySelector(".work-id").value.trim(),
+            stages: [...work.querySelectorAll(".stage-checkbox:checked")].map(box => box.dataset.stage),
             proof: work.querySelector(".proof-link").value.trim(),
             original: work.querySelector(".original-link").value.trim()
         }))
@@ -308,15 +372,42 @@ function collectData() {
 }
 
 function getFilledWorks(section) {
-    return section.works
-        .map(work => ({ ...work, image: extractImageUrl(work.image) }))
-        .filter(work => work.image);
+    const result = [];
+    section.works.forEach(work => {
+        if (ID_BASED_TYPES.has(section.type)) {
+            if (!String(work.id || "").trim()) return;
+            if (section.type === "Костюм актера") {
+                COSTUME_STAGES.filter(stage => (work.stages || ["static"]).includes(stage.key)).forEach(stage => {
+                    result.push({
+                        ...work,
+                        image: imageUrlFromId(section.type, work.id, stage.key),
+                        stageNumber: stage.number,
+                        stageLabel: `${stage.number}. ${stage.label}`
+                    });
+                });
+            } else {
+                result.push({ ...work, image: imageUrlFromId(section.type, work.id) });
+            }
+            return;
+        }
+        const image = extractImageUrl(work.image);
+        if (image) result.push({ ...work, image });
+    });
+    return result;
+}
+
+function getCountableWorks(section) {
+    // В описании костюм считается по одному разу на ID, независимо от количества стадий.
+    if (section.type === "Костюм актера") {
+        return section.works.filter(work => String(work.id || "").trim());
+    }
+    return getFilledWorks(section);
 }
 
 function buildDescription(data) {
     const parts = [];
     data.sections.forEach(section => {
-        const works = getFilledWorks(section);
+        const works = getCountableWorks(section);
         if (!works.length) return;
         const forms = section.type === "custom"
             ? { one: section.customSingular, few: section.customPlural, many: section.customPlural }
@@ -327,7 +418,6 @@ function buildDescription(data) {
     if (parts.length <= 1) return parts.join("");
     return parts.slice(0, -1).join(", ") + " и " + parts[parts.length - 1];
 }
-
 function getReportDescription(data) {
     const description = buildDescription(data);
     descriptionInput.value = description;
@@ -372,7 +462,8 @@ function generateBBCode(data) {
 }
 
 function makeWorkCell(work, number) {
-    let cell = `[td]${number}. [img]${work.image}[/img]\n\n[url]${work.image}[/url]`;
+    const heading = work.stageLabel ? work.stageLabel : `${number}.`;
+    let cell = `[td]${heading} [img]${work.image}[/img]\n\n[url]${work.image}[/url]`;
     if (work.original) cell += `\n\nОригинал: [url]${work.original}[/url]`;
     if (work.proof) cell += `\n\nДоказательство: [url]${work.proof}[/url]`;
     return cell + "[/td]";
@@ -391,7 +482,7 @@ function generateVisualReport(data) {
         works.forEach((work, index) => {
             const imageUrl = work.image;
             html += `<article class="visual-work-card">
-                <b>${index + 1}.</b>
+                <b>${escapeHTML(work.stageLabel || `${index + 1}.`)}</b>
                 <a href="${escapeHTML(imageUrl)}" target="_blank" rel="noopener noreferrer">
                     <img src="${escapeHTML(imageUrl)}" alt="Работа ${index + 1}" onerror="this.style.display='none';this.nextElementSibling.hidden=false">
                 </a>
