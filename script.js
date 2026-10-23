@@ -1,1658 +1,513 @@
-// =====================================================
-// CW Art Report Generator
-// script.js
-// =====================================================
-
-// ---------- Главные элементы ----------
+// CW Art Report Generator — обновлённая версия
+"use strict";
 
 const artistIdInput = document.getElementById("artistId");
 const factionInput = document.getElementById("faction");
 const descriptionInput = document.getElementById("description");
-
 const sectionsContainer = document.getElementById("sectionsContainer");
-
 const addSectionBtn = document.getElementById("addSectionBtn");
-
 const generateBtn = document.getElementById("generateBtn");
 const copyBtn = document.getElementById("copyBtn");
 const downloadBtn = document.getElementById("downloadBtn");
 const clearBtn = document.getElementById("clearBtn");
-
 const output = document.getElementById("output");
-
+const visualReportContent = document.getElementById("visualReportContent");
 const sectionTemplate = document.getElementById("sectionTemplate");
 const workTemplate = document.getElementById("workTemplate");
-
-
-// =====================================================
-// Создание раздела
-// =====================================================
-
-function createSection(data = null) {
-
-    const section =
-        sectionTemplate.content.firstElementChild.cloneNode(true);
-
-    const titleInput =
-        section.querySelector(".section-title");
-
-    const worksContainer =
-        section.querySelector(".works-container");
-
-    const addWorkButton =
-        section.querySelector(".add-work");
-
-    const deleteButton =
-        section.querySelector(".delete-section");
-
-
-    // Заголовок раздела
-
-    if (data) {
-
-        titleInput.value = data.title;
-
-    }
-
-
-    // Добавить работу
-
-    addWorkButton.addEventListener("click", () => {
-
-        createWork(worksContainer);
-
-        updateWorkNumbers(worksContainer);
-
-        autoGenerate();
-
-        saveData();
-
-    });
-
-
-    // Удалить раздел
-
-    deleteButton.addEventListener("click", () => {
-
-        if (!confirm("Удалить раздел?"))
-            return;
-
-        section.remove();
-
-        autoGenerate();
-
-        saveData();
-
-    });
-
-
-    // Изменение названия
-
-    titleInput.addEventListener("input", () => {
-
-        autoGenerate();
-
-        saveData();
-
-    });
-
-
-    // Если загружены данные
-
-    if (data && data.works.length > 0) {
-
-        data.works.forEach(work => {
-
-            createWork(worksContainer, work);
-
-        });
-
-    }
-
-    else {
-
-        // Первая пустая работа
-
-        createWork(worksContainer);
-
-    }
-
-
-    updateWorkNumbers(worksContainer);
-
-    sectionsContainer.appendChild(section);
-
-}
-
-
-
-// =====================================================
-// Создание работы
-// =====================================================
-
-function createWork(container, data = null) {
-
-    const work =
-        workTemplate.content.firstElementChild.cloneNode(true);
-
-    const imageInput =
-        work.querySelector(".image-link");
-
-    const proofInput =
-        work.querySelector(".proof-link");
-
-    const deleteButton =
-        work.querySelector(".delete-work");
-
-
-    // Заполняем данные
-
-    if (data) {
-
-        imageInput.value = data.image;
-
-        proofInput.value = data.proof;
-
-    }
-
-
-    // Любое изменение
-
-    imageInput.addEventListener("input", () => {
-
-        autoGenerate();
-
-        saveData();
-
-    });
-
-
-    proofInput.addEventListener("input", () => {
-
-        autoGenerate();
-
-        saveData();
-
-    });
-
-
-    // Удаление
-
-    deleteButton.addEventListener("click", () => {
-
-        if (!confirm("Удалить работу?"))
-            return;
-
-        work.remove();
-
-        updateWorkNumbers(container);
-
-        autoGenerate();
-
-        saveData();
-
-    });
-
-
-    container.appendChild(work);
-
-}
-
-
-
-// =====================================================
-// Перенумерация работ
-// =====================================================
-
-function updateWorkNumbers(container) {
-
-    const works =
-        container.querySelectorAll(".work-card");
-
-    works.forEach((work, index) => {
-
-        work.querySelector(".work-number").textContent =
-            "Работа № " + (index + 1);
-
-    });
-
-}
-
-
-
-// =====================================================
-// Получить данные со страницы
-// =====================================================
-
-function collectData() {
-
-    const result = {
-
-        artistId: artistIdInput.value.trim(),
-
-        faction: factionInput.value.trim(),
-
-        description: descriptionInput.value.trim(),
-
-        sections: []
-
-    };
-
-
-    const sections =
-        sectionsContainer.querySelectorAll(".report-section");
-
-
-    sections.forEach(section => {
-
-        const sectionData = {
-
-            title:
-                section.querySelector(".section-title").value.trim(),
-
-            works: []
-
-        };
-
-
-        const works =
-            section.querySelectorAll(".work-card");
-
-
-        works.forEach(work => {
-
-            sectionData.works.push({
-
-                image:
-                    work.querySelector(".image-link").value.trim(),
-
-                proof:
-                    work.querySelector(".proof-link").value.trim()
-
-            });
-
-        });
-
-
-        result.sections.push(sectionData);
-
-    });
-
-
-    return result;
-
-}
-// =====================================================
-// Автоматическая генерация
-// =====================================================
-
-function autoGenerate() {
-
-    const data = collectData();
-
-    output.value = generateBBCode(data);
-
-}
-
-
-
-// =====================================================
-// Генерация BBCode
-// =====================================================
-
-function generateBBCode(data) {
-
-    let bb = "";
-
-    if (
-        data.artistId === "" &&
-        data.faction === "" &&
-        data.description === ""
-    ) {
-        return "";
-    }
-
-    bb += `[link${data.artistId}] (${data.artistId}) нарисовал в ${data.faction} ${data.description}. Прошу выдать баллы за работу:\n\n`;
-
-    data.sections.forEach(section => {
-
-        if (section.title === "")
-            return;
-
-        bb += `[center][b]${section.title}:[/b][/center]\n\n`;
-
-        bb += `[center][table][tr]`;
-
-        section.works.forEach((work, index) => {
-
-            if (work.image === "")
-                return;
-
-            bb += `[td]`;
-
-            bb += `${index + 1}. `;
-
-            bb += `[img]${work.image}[/img]\n\n`;
-
-            bb += `[url]${work.image}[/url]`;
-
-            if (work.proof !== "") {
-
-                bb += `\n\n`;
-
-                bb += `Доказательство: `;
-
-                bb += `[url]${work.proof}[/url]`;
-
-            }
-
-            bb += `[/td]\n\n`;
-
-        });
-
-        bb += `[/tr]\n`;
-
-        bb += `[/table][/center]\n\n`;
-
-    });
-
-    return bb;
-
-}
-
-
-
-// =====================================================
-// Проверка обязательных полей
-// =====================================================
-
-function validateInputs() {
-
-    let ok = true;
-
-    [
-        artistIdInput,
-        factionInput,
-        descriptionInput
-    ].forEach(input => {
-
-        if (input.value.trim() === "") {
-
-            input.style.borderColor = "#e74c3c";
-
-            ok = false;
-
-        }
-
-        else {
-
-            input.style.borderColor = "";
-
-        }
-
-    });
-
-    document
-        .querySelectorAll(".image-link")
-        .forEach(input => {
-
-            if (input.value.trim() === "") {
-
-                input.style.borderColor = "#e74c3c";
-
-                ok = false;
-
-            }
-
-            else {
-
-                input.style.borderColor = "";
-
-            }
-
-        });
-
-    return ok;
-
-}
-
-
-
-// =====================================================
-// Кнопка генерации
-// =====================================================
-
-generateBtn.addEventListener("click", () => {
-
-    if (!validateInputs()) {
-
-        alert("Заполните все обязательные поля.");
-
-        return;
-
-    }
-
-    autoGenerate();
-
-});
-
-
-
-// =====================================================
-// Копирование
-// =====================================================
-
-copyBtn.addEventListener("click", async () => {
-
-    autoGenerate();
-
-    try {
-
-        await navigator.clipboard.writeText(output.value);
-
-        const old = copyBtn.textContent;
-
-        copyBtn.textContent = "✔ Скопировано";
-
-        setTimeout(() => {
-
-            copyBtn.textContent = old;
-
-        }, 1500);
-
-    }
-
-    catch {
-
-        alert("Не удалось скопировать текст.");
-
-    }
-
-});
-
-
-
-// =====================================================
-// Скачать txt
-// =====================================================
-
-downloadBtn.addEventListener("click", () => {
-
-    autoGenerate();
-
-    const blob = new Blob(
-
-        [output.value],
-
-        { type: "text/plain;charset=utf-8" }
-
-    );
-
-    const a = document.createElement("a");
-
-    a.href = URL.createObjectURL(blob);
-
-    a.download = `Report_${artistIdInput.value || "report"}.txt`;
-
-    a.click();
-
-    URL.revokeObjectURL(a.href);
-
-});
-
-// =====================================================
-// Автосохранение
-// =====================================================
-
 const STORAGE_KEY = "cwArtReportGenerator";
 
-function saveData() {
+const SECTION_INFO = {
+    "Предмет": {
+        heading: "Предмет",
+        one: "предмет",
+        few: "предмета",
+        many: "предметов",
+        lineBreakEveryTwo: false,
+        original: false
+    },
+    "Медаль": {
+        heading: "Медаль",
+        one: "медаль",
+        few: "медали",
+        many: "медалей",
+        lineBreakEveryTwo: false,
+        original: false
+    },
+    "Костюм актера": {
+        heading: "Костюм актера",
+        one: "костюм актера",
+        few: "костюма актера",
+        many: "костюмов актеров",
+        lineBreakEveryTwo: false,
+        original: false
+    },
+    "Костюм бота": {
+        heading: "Костюм бота",
+        one: "костюм бота",
+        few: "костюма бота",
+        many: "костюмов ботов",
+        lineBreakEveryTwo: false,
+        original: false
+    },
+    "Фон": {
+        heading: "Фон",
+        one: "фон",
+        few: "фона",
+        many: "фонов",
+        lineBreakEveryTwo: true,
+        original: true
+    },
+    "Украшение фона": {
+        heading: "Украшение фона",
+        one: "украшение фона",
+        few: "украшения фонов",
+        many: "украшений фонов",
+        lineBreakEveryTwo: false,
+        original: true
+    },
+    "Шапка в блог": {
+        heading: "Шапка в блог",
+        one: "шапку в блог",
+        few: "шапки в блоги",
+        many: "шапок в блоги",
+        lineBreakEveryTwo: false,
+        original: false
+    },
+    "Иллюстрация": {
+        heading: "Иллюстрация",
+        one: "иллюстрацию",
+        few: "иллюстрации",
+        many: "иллюстраций",
+        lineBreakEveryTwo: false,
+        original: false
+    }
+};
 
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, ch => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[ch]));
+}
+
+// Позволяет вставлять прямую ссылку, BBCode или HTML-код с картинкой.
+function extractImageUrl(value) {
+    let text = String(value || "").trim();
+    if (!text) return "";
+
+    // Если вставлен HTML-код с <img src="...">
+    let match = text.match(/<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/i);
+    if (match) return cleanUrl(match[1]);
+
+    // Если вставлен BBCode с изображением, в том числе внутри [url=...]
+    match = text.match(/\[img(?:=[^\]]*)?\]\s*(https?:\/\/[^\s\[]+)\s*\[\/img\]/i);
+    if (match) return cleanUrl(match[1]);
+
+    // Если вставлен [url=адрес][img]адрес картинки[/img][/url]
+    match = text.match(/\[url(?:=[^\]]*)?\]\s*\[img(?:=[^\]]*)?\]\s*(https?:\/\/[^\s\[]+)/i);
+    if (match) return cleanUrl(match[1]);
+
+    // Обычная ссылка — забираем первый URL из текста.
+    match = text.match(/https?:\/\/[^\s"'<>[\]]+/i);
+    if (match) return cleanUrl(match[0]);
+
+    // На случай, если код BBCode был URL-кодирован браузером/полем.
+    try {
+        const decoded = decodeURIComponent(text);
+        if (decoded !== text) return extractImageUrl(decoded);
+    } catch (_) {}
+
+    return text;
+}
+
+function cleanUrl(url) {
+    return String(url || "").trim().replace(/[),.;]+$/, "");
+}
+
+function getSectionType(section) {
+    return section.querySelector(".section-type").value;
+}
+
+function getSectionTitle(section) {
+    const type = getSectionType(section);
+    if (type === "custom") {
+        return section.querySelector(".custom-title").value.trim();
+    }
+    return SECTION_INFO[type]?.heading || type;
+}
+
+function getSectionNounForms(section) {
+    const type = getSectionType(section);
+    if (type === "custom") {
+        return {
+            heading: section.querySelector(".custom-title").value.trim(),
+            one: section.querySelector(".custom-singular").value.trim(),
+            few: section.querySelector(".custom-plural").value.trim(),
+            many: section.querySelector(".custom-plural").value.trim(),
+            lineBreakEveryTwo: false,
+            original: false
+        };
+    }
+    return SECTION_INFO[type] || null;
+}
+
+function getCountForm(count, forms) {
+    const lastTwo = count % 100;
+    const last = count % 10;
+    if (lastTwo >= 11 && lastTwo <= 14) return forms.many;
+    if (last === 1) return forms.one;
+    if (last >= 2 && last <= 4) return forms.few;
+    return forms.many;
+}
+
+function createSection(data = null) {
+    const section = sectionTemplate.content.firstElementChild.cloneNode(true);
+    const typeSelect = section.querySelector(".section-type");
+    const customFields = section.querySelector(".custom-section-fields");
+    const customTitle = section.querySelector(".custom-title");
+    const customSingular = section.querySelector(".custom-singular");
+    const customPlural = section.querySelector(".custom-plural");
+    const worksContainer = section.querySelector(".works-container");
+
+    if (data) {
+        const oldTitle = data.title || "";
+        if (data.type && [...typeSelect.options].some(o => o.value === data.type)) {
+            typeSelect.value = data.type;
+        } else if ([...typeSelect.options].some(o => o.value === oldTitle)) {
+            typeSelect.value = oldTitle;
+        } else if (oldTitle) {
+            typeSelect.value = "custom";
+            customTitle.value = oldTitle;
+            customSingular.value = data.customSingular || oldTitle.toLowerCase();
+            customPlural.value = data.customPlural || oldTitle.toLowerCase();
+        }
+        customTitle.value = data.customTitle ?? customTitle.value;
+        customSingular.value = data.customSingular ?? customSingular.value;
+        customPlural.value = data.customPlural ?? customPlural.value;
+    }
+
+    function updateSectionControls() {
+        const isCustom = typeSelect.value === "custom";
+        customFields.hidden = !isCustom;
+        section.querySelectorAll(".original-field").forEach(field => {
+            field.hidden = !(SECTION_INFO[typeSelect.value]?.original);
+        });
+        section.querySelectorAll(".work-card").forEach(work => {
+            const originalField = work.querySelector(".original-field");
+            if (originalField) originalField.hidden = !SECTION_INFO[typeSelect.value]?.original;
+        });
+        refresh();
+    }
+
+    typeSelect.addEventListener("change", () => {
+        updateSectionControls();
+        saveData();
+    });
+
+    [customTitle, customSingular, customPlural].forEach(input => {
+        input.addEventListener("input", refreshAndSave);
+    });
+
+    section.querySelector(".add-work").addEventListener("click", () => {
+        createWork(worksContainer);
+        updateWorkNumbers(worksContainer);
+        refreshAndSave();
+    });
+
+    section.querySelector(".delete-section").addEventListener("click", () => {
+        if (!confirm("Удалить раздел вместе со всеми работами?")) return;
+        section.remove();
+        refreshAndSave();
+    });
+
+    if (data?.works?.length) {
+        data.works.forEach(work => createWork(worksContainer, work, typeSelect.value));
+    } else {
+        createWork(worksContainer, null, typeSelect.value);
+    }
+
+    sectionsContainer.appendChild(section);
+    updateWorkNumbers(worksContainer);
+    updateSectionControls();
+    return section;
+}
+
+function createWork(container, data = null, sectionType = "") {
+    const work = workTemplate.content.firstElementChild.cloneNode(true);
+    const imageInput = work.querySelector(".image-link");
+    const proofInput = work.querySelector(".proof-link");
+    const originalInput = work.querySelector(".original-link");
+    const originalField = work.querySelector(".original-field");
+    const previewWrap = work.querySelector(".image-preview-wrap");
+
+    if (data) {
+        imageInput.value = data.image || "";
+        proofInput.value = data.proof || "";
+        originalInput.value = data.original || "";
+    }
+    originalField.hidden = !SECTION_INFO[sectionType]?.original;
+
+    function updatePreview() {
+        previewWrap.innerHTML = "";
+        const url = extractImageUrl(imageInput.value);
+        if (!url || !/^https?:\/\//i.test(url)) return;
+        const img = document.createElement("img");
+        img.className = "image-preview";
+        img.src = url;
+        img.alt = "Предпросмотр работы";
+        img.style.cssText = "display:block;max-width:180px;max-height:180px;object-fit:contain;margin-top:10px;border-radius:8px;";
+        img.onerror = () => { img.remove(); };
+        img.addEventListener("click", () => window.open(url, "_blank", "noopener"));
+        img.style.cursor = "pointer";
+        previewWrap.appendChild(img);
+    }
+
+    [imageInput, proofInput, originalInput].forEach(input => input.addEventListener("input", () => {
+        updatePreview();
+        refreshAndSave();
+    }));
+
+    work.querySelector(".delete-work").addEventListener("click", () => {
+        if (!confirm("Удалить эту работу?")) return;
+        work.remove();
+        updateWorkNumbers(container);
+        refreshAndSave();
+    });
+
+    container.appendChild(work);
+    updatePreview();
+    return work;
+}
+
+function updateWorkNumbers(container) {
+    container.querySelectorAll(".work-card").forEach((work, index) => {
+        work.querySelector(".work-number").textContent = `Работа № ${index + 1}`;
+    });
+}
+
+function collectData() {
+    const sections = [...sectionsContainer.querySelectorAll(".report-section")].map(section => ({
+        type: getSectionType(section),
+        title: getSectionTitle(section),
+        customTitle: section.querySelector(".custom-title").value.trim(),
+        customSingular: section.querySelector(".custom-singular").value.trim(),
+        customPlural: section.querySelector(".custom-plural").value.trim(),
+        works: [...section.querySelectorAll(".work-card")].map(work => ({
+            image: work.querySelector(".image-link").value.trim(),
+            proof: work.querySelector(".proof-link").value.trim(),
+            original: work.querySelector(".original-link").value.trim()
+        }))
+    }));
+
+    return {
+        artistId: artistIdInput.value.trim(),
+        faction: factionInput.value.trim(),
+        sections
+    };
+}
+
+function getFilledWorks(section) {
+    return section.works
+        .map(work => ({ ...work, image: extractImageUrl(work.image) }))
+        .filter(work => work.image);
+}
+
+function buildDescription(data) {
+    const parts = [];
+    data.sections.forEach(section => {
+        const works = getFilledWorks(section);
+        if (!works.length) return;
+        const forms = section.type === "custom"
+            ? { one: section.customSingular, few: section.customPlural, many: section.customPlural }
+            : SECTION_INFO[section.type];
+        if (!forms || !forms.one || !forms.few || !forms.many) return;
+        parts.push(`${works.length} ${getCountForm(works.length, forms)}`);
+    });
+    if (parts.length <= 1) return parts.join("");
+    return parts.slice(0, -1).join(", ") + " и " + parts[parts.length - 1];
+}
+
+function getReportDescription(data) {
+    const description = buildDescription(data);
+    descriptionInput.value = description;
+    return description;
+}
+
+function generateBBCode(data) {
+    const description = getReportDescription(data);
+    if (!data.artistId && !data.faction && !description) return "";
+
+    let bb = `[link${data.artistId}] (${data.artistId}) нарисовал в ${data.faction}`;
+    if (description) bb += ` ${description}`;
+    bb += `. Прошу выдать баллы за работу:\n\n`;
+
+    data.sections.forEach(section => {
+        const works = getFilledWorks(section);
+        if (!works.length) return;
+        const title = section.type === "custom" ? section.customTitle : (SECTION_INFO[section.type]?.heading || section.title);
+        if (!title) return;
+
+        bb += `[center][b]${title}:[/b][/center]\n\n`;
+        const forms = section.type === "custom" ? null : SECTION_INFO[section.type];
+        const twoPerRow = !!forms?.lineBreakEveryTwo;
+
+        if (twoPerRow) {
+            bb += "[center][table]";
+            for (let i = 0; i < works.length; i += 2) {
+                bb += "[tr]";
+                works.slice(i, i + 2).forEach((work, offset) => {
+                    bb += makeWorkCell(work, i + offset + 1);
+                });
+                bb += "[/tr]";
+            }
+            bb += "[/table][/center]\\n\\n";
+        } else {
+            bb += "[center][table][tr]";
+            works.forEach((work, index) => { bb += makeWorkCell(work, index + 1); });
+            bb += "[/tr][/table][/center]\\n\\n";
+        }
+    });
+    return bb.trim();
+}
+
+function makeWorkCell(work, number) {
+    let cell = `[td]${number}. [img]${work.image}[/img]\n\n[url]${work.image}[/url]`;
+    if (work.original) cell += `\n\nОригинал: [url]${work.original}[/url]`;
+    if (work.proof) cell += `\n\nДоказательство: [url]${work.proof}[/url]`;
+    return cell + "[/td]";
+}
+
+function generateVisualReport(data) {
+    const description = getReportDescription(data);
+    let html = `<div class="visual-report-intro"><b>[link${escapeHTML(data.artistId)}]</b> (${escapeHTML(data.artistId)}) нарисовал в <b>${escapeHTML(data.faction)}</b>${description ? " " + escapeHTML(description) : ""}. Прошу выдать баллы за работу:</div>`;
+
+    data.sections.forEach(section => {
+        const works = getFilledWorks(section);
+        if (!works.length) return;
+        const title = section.type === "custom" ? section.customTitle : (SECTION_INFO[section.type]?.heading || section.title);
+        if (!title) return;
+        html += `<h3 class="visual-section-title">${escapeHTML(title)}</h3><div class="visual-works-grid ${section.type === "Фон" ? "background-works-grid" : ""}">`;
+        works.forEach((work, index) => {
+            const imageUrl = work.image;
+            html += `<article class="visual-work-card">
+                <b>${index + 1}.</b>
+                <a href="${escapeHTML(imageUrl)}" target="_blank" rel="noopener noreferrer">
+                    <img src="${escapeHTML(imageUrl)}" alt="Работа ${index + 1}" onerror="this.style.display='none';this.nextElementSibling.hidden=false">
+                </a>
+                <p class="preview-image-error" hidden>Изображение не удалось загрузить. Проверь ссылку.</p>`;
+            if (work.original) html += `<p><b>Оригинал:</b> <a href="${escapeHTML(work.original)}" target="_blank" rel="noopener noreferrer">Открыть</a></p>`;
+            if (work.proof) html += `<p><b>Доказательство:</b> <a href="${escapeHTML(work.proof)}" target="_blank" rel="noopener noreferrer">Открыть</a></p>`;
+            html += `</article>`;
+        });
+        html += `</div>`;
+    });
+    visualReportContent.innerHTML = html;
+}
+
+function refresh() {
     const data = collectData();
+    output.value = generateBBCode(data);
+    generateVisualReport(data);
+}
 
-    localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(data)
-    );
+function refreshAndSave() {
+    refresh();
+    saveData();
+}
 
+function saveData() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData()));
+    } catch (error) {
+        console.warn("Не удалось сохранить отчёт:", error);
+    }
 }
 
 function loadData() {
-
-    const saved =
-        localStorage.getItem(STORAGE_KEY);
-
-    if (!saved)
-        return;
-
-    const data = JSON.parse(saved);
-
-    artistIdInput.value = data.artistId;
-    factionInput.value = data.faction;
-    descriptionInput.value = data.description;
-
-    sectionsContainer.innerHTML = "";
-
-    data.sections.forEach(section => {
-
-        createSection(section);
-
-    });
-
-    autoGenerate();
-
+    let saved;
+    try {
+        saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return false;
+        const data = JSON.parse(saved);
+        artistIdInput.value = data.artistId || "";
+        factionInput.value = data.faction || "Клан Падающей Воды";
+        sectionsContainer.innerHTML = "";
+        (data.sections || []).forEach(section => createSection(section));
+        return true;
+    } catch (error) {
+        console.warn("Не удалось загрузить сохранённый отчёт:", error);
+        return false;
+    }
 }
 
-
-
-// =====================================================
-// Очистить всё
-// =====================================================
-
-clearBtn.addEventListener("click", () => {
-
-    if (
-        !confirm(
-            "Удалить весь отчет?"
-        )
-    ) {
-        return;
-    }
-
+function clearAll() {
+    if (!confirm("Удалить весь отчёт и сохранённые данные?")) return;
     artistIdInput.value = "";
-    factionInput.value = "";
+    factionInput.value = "Клан Падающей Воды";
     descriptionInput.value = "";
-
     sectionsContainer.innerHTML = "";
-
-    output.value = "";
-
     localStorage.removeItem(STORAGE_KEY);
+    createSection();
+    refreshAndSave();
+}
 
-});
-
-
-
-// =====================================================
-// Автогенерация при изменении верхних полей
-// =====================================================
-
-[
-    artistIdInput,
-    factionInput,
-    descriptionInput
-
-].forEach(input => {
-
-    input.addEventListener("input", () => {
-
-        autoGenerate();
-
-        saveData();
-
+function validateInputs() {
+    let valid = true;
+    [artistIdInput, factionInput].forEach(input => {
+        input.style.borderColor = input.value.trim() ? "" : "#e74c3c";
+        if (!input.value.trim()) valid = false;
     });
-
-});
-
-
-
-// =====================================================
-// Добавление раздела
-// =====================================================
+    sectionsContainer.querySelectorAll(".image-link").forEach(input => {
+        const isRequired = !!input.value.trim();
+        input.style.borderColor = isRequired ? "" : "";
+    });
+    return valid;
+}
 
 addSectionBtn.addEventListener("click", () => {
-
-    createSection({
-
-        title: "",
-
-        works: []
-
-    });
-
-    autoGenerate();
-
-    saveData();
-
+    createSection();
+    refreshAndSave();
 });
-
-
-
-// =====================================================
-// Первый раздел
-// =====================================================
-
-function createDefaultReport() {
-
-    if (
-        sectionsContainer.children.length > 0
-    ) {
-        return;
-    }
-
-    createSection({
-
-        title: "",
-
-        works: []
-
-    });
-
-}
-
-
-
-// =====================================================
-// Запуск приложения
-// =====================================================
-
-window.addEventListener("DOMContentLoaded", () => {
-
-    loadData();
-
-    createDefaultReport();
-
-    autoGenerate();
-
-});
-
-// =====================================================
-// Вспомогательные функции
-// =====================================================
-
-function getSections() {
-
-    return document.querySelectorAll(".report-section");
-
-}
-
-function getWorks(section) {
-
-    return section.querySelectorAll(".work-card");
-
-}
-
-function renumberAll() {
-
-    getSections().forEach(section => {
-
-        updateWorkNumbers(
-            section.querySelector(".works-container")
-        );
-
-    });
-
-}
-
-
-
-// =====================================================
-// Подсветка незаполненных изображений
-// =====================================================
-
-function validateImages() {
-
-    document
-        .querySelectorAll(".image-link")
-        .forEach(input => {
-
-            if (input.value.trim() === "") {
-
-                input.style.borderColor = "#e74c3c";
-
-            }
-
-            else {
-
-                input.style.borderColor = "";
-
-            }
-
-        });
-
-}
-
-
-
-// =====================================================
-// Обновление всего приложения
-// =====================================================
-
-function refresh() {
-
-    renumberAll();
-
-    validateImages();
-
-    autoGenerate();
-
-    saveData();
-
-}
-
-
-
-// =====================================================
-// Следим за всеми изменениями
-// =====================================================
-
-document.addEventListener("input", (event) => {
-
-    const target = event.target;
-
-    if (
-
-        target.classList.contains("image-link") ||
-
-        target.classList.contains("proof-link") ||
-
-        target.classList.contains("section-title")
-
-    ) {
-
-        refresh();
-
-    }
-
-});
-
-
-
-// =====================================================
-// Автоматическая проверка верхних полей
-// =====================================================
-
-[
-    artistIdInput,
-    factionInput,
-    descriptionInput
-
-].forEach(input => {
-
-    input.addEventListener("input", refresh);
-
-});
-
-
-
-// =====================================================
-// Экспорт данных
-// =====================================================
-
-function exportData() {
-
-    return JSON.stringify(
-
-        collectData(),
-
-        null,
-
-        4
-
-    );
-
-}
-
-
-
-// =====================================================
-// Импорт данных
-// =====================================================
-
-function importData(json) {
-
-    try {
-
-        const data = JSON.parse(json);
-
-        artistIdInput.value = data.artistId || "";
-
-        factionInput.value = data.faction || "";
-
-        descriptionInput.value = data.description || "";
-
-        sectionsContainer.innerHTML = "";
-
-        data.sections.forEach(section => {
-
-            createSection(section);
-
-        });
-
-        refresh();
-
-    }
-
-    catch {
-
-        alert("Ошибка чтения данных.");
-
-    }
-
-}
-
-
-
-// =====================================================
-// Горячая клавиша Ctrl + S
-// =====================================================
-
-document.addEventListener("keydown", event => {
-
-    if (
-
-        event.ctrlKey &&
-
-        event.key.toLowerCase() === "s"
-
-    ) {
-
-        event.preventDefault();
-
-        saveData();
-
-    }
-
-});
-
-
-
-// =====================================================
-// Горячая клавиша Ctrl + C
-// (если курсор не в поле ввода)
-// =====================================================
-
-document.addEventListener("keydown", event => {
-
-    if (
-
-        event.ctrlKey &&
-
-        event.shiftKey &&
-
-        event.key.toLowerCase() === "c"
-
-    ) {
-
-        event.preventDefault();
-
-        copyBtn.click();
-
-    }
-
-});
-
-
-
-// =====================================================
-// После загрузки страницы
-// =====================================================
-
-window.addEventListener("load", () => {
-
-    refresh();
-
-});
-
-// =====================================================
-// Предпросмотр изображений
-// =====================================================
-
-function createImagePreview(input) {
-
-    let preview = input.parentElement.querySelector(".image-preview");
-
-    if (!preview) {
-
-        preview = document.createElement("img");
-
-        preview.className = "image-preview";
-
-        preview.style.maxWidth = "180px";
-        preview.style.marginTop = "10px";
-        preview.style.borderRadius = "8px";
-        preview.style.display = "none";
-
-        input.parentElement.appendChild(preview);
-
-    }
-
-    if (input.value.trim() === "") {
-
-        preview.style.display = "none";
-
-        preview.removeAttribute("src");
-
-        return;
-
-    }
-
-    preview.src = input.value;
-
-    preview.style.display = "block";
-
-    preview.onerror = function () {
-
-        preview.style.display = "none";
-
-    };
-
-}
-
-function updateAllPreviews() {
-
-    document
-        .querySelectorAll(".image-link")
-        .forEach(input => {
-
-            createImagePreview(input);
-
-        });
-
-}
-
-
-
-// =====================================================
-// Предпросмотр доказательств
-// =====================================================
-
-function createProofPreview(input) {
-
-    let preview = input.parentElement.querySelector(".proof-preview");
-
-    if (!preview) {
-
-        preview = document.createElement("img");
-
-        preview.className = "proof-preview";
-
-        preview.style.maxWidth = "180px";
-        preview.style.marginTop = "10px";
-        preview.style.borderRadius = "8px";
-        preview.style.display = "none";
-
-        input.parentElement.appendChild(preview);
-
-    }
-
-    if (input.value.trim() === "") {
-
-        preview.style.display = "none";
-
-        preview.removeAttribute("src");
-
-        return;
-
-    }
-
-    preview.src = input.value;
-
-    preview.style.display = "block";
-
-    preview.onerror = function () {
-
-        preview.style.display = "none";
-
-    };
-
-}
-
-
-
-// =====================================================
-// Обновить все доказательства
-// =====================================================
-
-function updateAllProofs() {
-
-    document
-        .querySelectorAll(".proof-link")
-        .forEach(input => {
-
-            createProofPreview(input);
-
-        });
-
-}
-
-
-
-// =====================================================
-// Полное обновление интерфейса
-// =====================================================
-
-function fullRefresh() {
-
-    refresh();
-
-    updateAllPreviews();
-
-    updateAllProofs();
-
-}
-
-
-
-// =====================================================
-// Следим за всеми ссылками
-// =====================================================
-
-document.addEventListener("input", event => {
-
-    const target = event.target;
-
-    if (target.classList.contains("image-link")) {
-
-        createImagePreview(target);
-
-    }
-
-    if (target.classList.contains("proof-link")) {
-
-        createProofPreview(target);
-
-    }
-
-});
-
-
-
-// =====================================================
-// Клик по картинке
-// =====================================================
-
-document.addEventListener("click", event => {
-
-    if (
-
-        event.target.classList.contains("image-preview") ||
-
-        event.target.classList.contains("proof-preview")
-
-    ) {
-
-        window.open(event.target.src, "_blank");
-
-    }
-
-});
-
-
-
-// =====================================================
-// Финальная инициализация
-// =====================================================
-
-window.addEventListener("load", () => {
-
-    updateAllPreviews();
-
-    updateAllProofs();
-
-    refresh();
-
-});
-
-// =====================================================
-// Быстрый переход к BBCode
-// =====================================================
-
-function scrollToOutput() {
-
-    output.scrollIntoView({
-
-        behavior: "smooth",
-
-        block: "start"
-
-    });
-
-}
-
-
-
-// =====================================================
-// После генерации можно сразу прокрутить
-// =====================================================
 
 generateBtn.addEventListener("click", () => {
-
-    setTimeout(() => {
-
-        scrollToOutput();
-
-    }, 150);
-
-});
-
-
-
-// =====================================================
-// Количество работ в разделе
-// =====================================================
-
-function countWorks(section) {
-
-    let count = 0;
-
-    section
-        .querySelectorAll(".image-link")
-        .forEach(input => {
-
-            if (input.value.trim() !== "")
-                count++;
-
-        });
-
-    return count;
-
-}
-
-
-
-// =====================================================
-// Статистика
-// =====================================================
-
-function getStatistics() {
-
-    const sections =
-        document.querySelectorAll(".report-section");
-
-    let works = 0;
-
-    sections.forEach(section => {
-
-        works += countWorks(section);
-
-    });
-
-    return {
-
-        sections: sections.length,
-
-        works: works
-
-    };
-
-}
-
-
-
-// =====================================================
-// Консольная информация
-// =====================================================
-
-function logStatistics() {
-
-    const stats = getStatistics();
-
-    console.log(
-
-        "Разделов:",
-
-        stats.sections,
-
-        "Работ:",
-
-        stats.works
-
-    );
-
-}
-
-
-
-// =====================================================
-// Перед сохранением
-// =====================================================
-
-window.addEventListener("beforeunload", () => {
-
-    saveData();
-
-});
-
-
-
-// =====================================================
-// Автообновление статистики
-// =====================================================
-
-document.addEventListener("input", () => {
-
-    logStatistics();
-
-});
-
-
-
-// =====================================================
-// Полная генерация
-// =====================================================
-
-function generateEverything() {
-
     refresh();
-
-    autoGenerate();
-
-    updateAllPreviews();
-
-    updateAllProofs();
-
-}
-
-
-
-// =====================================================
-// Первый запуск
-// =====================================================
-
-window.addEventListener("DOMContentLoaded", () => {
-
-    if (
-
-        sectionsContainer.children.length === 0
-
-    ) {
-
-        createSection({
-
-            title: "",
-
-            works: []
-
-        });
-
-    }
-
-    generateEverything();
-
+    output.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
-
-
-// =====================================================
-// Конец файла
-// =====================================================
-
-console.log(
-
-    "CW Art Report Generator успешно загружен."
-
-);
-
-// =====================================================
-// ВИЗУАЛЬНЫЙ ПРЕДПРОСМОТР ВСЕГО ОТЧЁТА
-// =====================================================
-
-function escapePreviewText(text) {
-
-    const div = document.createElement("div");
-
-    div.textContent = text;
-
-    return div.innerHTML;
-
-}
-
-
-
-// =====================================================
-// Создание окна предпросмотра
-// =====================================================
-
-function createReportPreviewModal() {
-
-    let modal =
-        document.getElementById("reportPreviewModal");
-
-    if (modal) {
-
-        return modal;
-
+copyBtn.addEventListener("click", async () => {
+    refresh();
+    try {
+        await navigator.clipboard.writeText(output.value);
+        const old = copyBtn.textContent;
+        copyBtn.textContent = "✔ Скопировано";
+        setTimeout(() => { copyBtn.textContent = old; }, 1500);
+    } catch (_) {
+        output.focus();
+        output.select();
+        alert("Автоматическое копирование недоступно. BBCode выделен — скопируй его вручную.");
     }
-
-    modal = document.createElement("div");
-
-    modal.id = "reportPreviewModal";
-
-    modal.style.position = "fixed";
-    modal.style.inset = "0";
-    modal.style.background = "rgba(0, 0, 0, 0.75)";
-    modal.style.zIndex = "9999";
-    modal.style.display = "none";
-    modal.style.overflowY = "auto";
-    modal.style.padding = "30px";
-    modal.style.boxSizing = "border-box";
-
-    modal.innerHTML = `
-
-        <div
-            id="reportPreviewWindow"
-            style="
-                max-width: 1100px;
-                margin: 0 auto;
-                background: #ffffff;
-                border-radius: 16px;
-                padding: 30px;
-                box-sizing: border-box;
-            "
-        >
-
-            <div
-                style="
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    gap: 20px;
-                    margin-bottom: 25px;
-                "
-            >
-
-                <h2 style="margin: 0;">
-                    Предпросмотр отчёта
-                </h2>
-
-                <button
-                    id="closeReportPreview"
-                    type="button"
-                >
-                    ✕ Закрыть
-                </button>
-
-            </div>
-
-            <div
-                id="visualReportContent"
-            ></div>
-
-        </div>
-
-    `;
-
-    document.body.appendChild(modal);
-
-    document
-        .getElementById("closeReportPreview")
-        .addEventListener("click", () => {
-
-            modal.style.display = "none";
-
-        });
-
-    modal.addEventListener("click", event => {
-
-        if (event.target === modal) {
-
-            modal.style.display = "none";
-
-        }
-
-    });
-
-    return modal;
-
-}
-
-
-
-// =====================================================
-// Генерация визуального отчёта
-// =====================================================
-
-function generateVisualReport() {
-
-    const data = collectData();
-
-    let html = "";
-
-    html += `
-
-        <div
-            style="
-                font-size: 18px;
-                line-height: 1.6;
-                margin-bottom: 30px;
-            "
-        >
-            <b>[link${escapePreviewText(data.artistId)}]</b>
-            (${escapePreviewText(data.artistId)})
-            нарисовал в
-            <b>${escapePreviewText(data.faction)}</b>
-            ${escapePreviewText(data.description)}.
-            Прошу выдать баллы за работу:
-        </div>
-
-    `;
-
-
-    data.sections.forEach(section => {
-
-        if (!section.title) {
-
-            return;
-
-        }
-
-        html += `
-
-            <h3
-                style="
-                    text-align: center;
-                    margin-top: 30px;
-                    margin-bottom: 20px;
-                "
-            >
-                ${escapePreviewText(section.title)}
-            </h3>
-
-        `;
-
-        html += `
-
-            <div
-                style="
-                    display: grid;
-                    grid-template-columns:
-                        repeat(auto-fit, minmax(180px, 1fr));
-                    gap: 15px;
-                    margin-bottom: 35px;
-                "
-            >
-
-        `;
-
-
-        section.works.forEach((work, index) => {
-
-            if (!work.image) {
-
-                return;
-
-            }
-
-            html += `
-
-                <div
-                    style="
-                        border: 1px solid #dcdcdc;
-                        border-radius: 12px;
-                        padding: 12px;
-                        background: #fafafa;
-                        box-sizing: border-box;
-                    "
-                >
-
-                    <div
-                        style="
-                            font-weight: bold;
-                            margin-bottom: 10px;
-                        "
-                    >
-                        ${index + 1}.
-                    </div>
-
-                    <img
-                        src="${escapePreviewText(work.image)}"
-                        alt="Работа ${index + 1}"
-                        style="
-                            width: 100%;
-                            max-height: 220px;
-                            object-fit: contain;
-                            border-radius: 8px;
-                            display: block;
-                            background: #eeeeee;
-                            cursor: pointer;
-                        "
-                        onerror="
-                            this.style.display='none';
-                            this.nextElementSibling.style.display='block';
-                        "
-                        onclick="
-                            window.open(this.src, '_blank');
-                        "
-                    >
-
-                    <div
-                        style="
-                            display: none;
-                            padding: 20px 5px;
-                            text-align: center;
-                            color: #c0392b;
-                        "
-                    >
-                        ❌ Изображение не загрузилось
-                    </div>
-
-                    <div
-                        style="
-                            margin-top: 10px;
-                            font-size: 12px;
-                            word-break: break-all;
-                        "
-                    >
-                        ${escapePreviewText(work.image)}
-                    </div>
-
-                    ${
-                        work.proof
-                        ?
-                        `
-                            <div
-                                style="
-                                    margin-top: 10px;
-                                    font-size: 13px;
-                                "
-                            >
-                                <b>Доказательство:</b><br>
-
-                                <a
-                                    href="${escapePreviewText(work.proof)}"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    ${escapePreviewText(work.proof)}
-                                </a>
-                            </div>
-                        `
-                        :
-                        ""
-                    }
-
-                </div>
-
-            `;
-
-        });
-
-        html += `</div>`;
-
-    });
-
-
-    return html;
-
-}
-
-
-
-// =====================================================
-// Открыть предпросмотр
-// =====================================================
-
-function openVisualReportPreview() {
-
-    const modal =
-        createReportPreviewModal();
-
-    const content =
-        document.getElementById("visualReportContent");
-
-    content.innerHTML =
-        generateVisualReport();
-
-    modal.style.display = "block";
-
-}
-
-
-
-// =====================================================
-// Создание кнопки предпросмотра
-// =====================================================
-
-function createPreviewButton() {
-
-    if (
-        document.getElementById(
-            "visualPreviewButton"
-        )
-    ) {
-
-        return;
-
-    }
-
-    const button =
-        document.createElement("button");
-
-    button.id =
-        "visualPreviewButton";
-
-    button.type =
-        "button";
-
-    button.textContent =
-        "👀 Предпросмотр отчёта";
-
-    button.style.marginTop =
-        "10px";
-
-    button.addEventListener(
-        "click",
-        openVisualReportPreview
-    );
-
-
-    if (output && output.parentElement) {
-
-        output.parentElement.appendChild(button);
-
-    }
-
-}
-
-
-
-// =====================================================
-// Запуск предпросмотра
-// =====================================================
+});
+
+downloadBtn.addEventListener("click", () => {
+    refresh();
+    const blob = new Blob([output.value], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Report_${artistIdInput.value || "report"}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+});
+
+clearBtn.addEventListener("click", clearAll);
+
+[artistIdInput, factionInput].forEach(input => input.addEventListener("input", refreshAndSave));
+window.addEventListener("beforeunload", saveData);
 
 window.addEventListener("DOMContentLoaded", () => {
-
-    createPreviewButton();
-
+    const hadSavedData = loadData();
+    if (!hadSavedData && !sectionsContainer.children.length) createSection();
+    if (!factionInput.value.trim()) factionInput.value = "Клан Падающей Воды";
+    refresh();
 });
+
+console.log("CW Art Report Generator успешно загружен.");
