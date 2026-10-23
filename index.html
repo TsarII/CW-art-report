@@ -123,7 +123,20 @@
 <template id="workTemplate">
     <div class="work-card">
         <div class="work-number">Работа № 1</div>
-        <div class="field">
+        <div class="field id-field" hidden>
+            <label>ID работы</label>
+            <input type="number" class="work-id" placeholder="Введи ID">
+        </div>
+        <div class="field costume-stages-field" hidden>
+            <label>Стадии костюма</label>
+            <div class="stage-checkboxes">
+                <label class="stage-option"><input type="checkbox" class="stage-checkbox" data-stage="static" checked disabled> 1. Статика / бот</label>
+                <label class="stage-option"><input type="checkbox" class="stage-checkbox" data-stage="sleep"> 2. Сон</label>
+                <label class="stage-option"><input type="checkbox" class="stage-checkbox" data-stage="drink"> 3. Питьё</label>
+                <label class="stage-option"><input type="checkbox" class="stage-checkbox" data-stage="kitten"> 4. Котёнок</label>
+            </div>
+        </div>
+        <div class="field image-field">
             <label>Ссылка на изображение</label>
             <input type="text" class="image-link" placeholder="Вставь прямую ссылку или код с изображением">
             <div class="image-preview-wrap"></div>
