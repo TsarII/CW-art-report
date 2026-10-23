@@ -208,7 +208,9 @@ function createSection(data = null) {
     });
 
     section.querySelector(".add-work").addEventListener("click", () => {
-        createWork(worksContainer);
+        // Передаём тип раздела, чтобы у каждой новой работы
+        // показывалось поле «Оригинал» для фонов и украшений фона.
+        createWork(worksContainer, null, typeSelect.value);
         updateWorkNumbers(worksContainer);
         refreshAndSave();
     });
