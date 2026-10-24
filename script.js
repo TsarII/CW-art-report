@@ -84,7 +84,7 @@ const SECTION_INFO = {
         one: "украшение фона",
         few: "украшения фонов",
         many: "украшений фонов",
-        lineBreakEveryTwo: false,
+        lineBreakEveryTwo: true,
         original: true
     },
     "Шапка в блог": {
@@ -500,7 +500,7 @@ function generateVisualReport(data) {
         if (!works.length) return;
         const title = section.type === "custom" ? section.customTitle : (SECTION_INFO[section.type]?.heading || section.title);
         if (!title) return;
-        html += `<h3 class="visual-section-title">${escapeHTML(title)}</h3><div class="visual-works-grid ${section.type === "Фон" ? "background-works-grid" : ""}">`;
+        html += `<h3 class="visual-section-title">${escapeHTML(title)}</h3><div class="visual-works-grid ${["Фон", "Украшение фона"].includes(section.type) ? "background-works-grid" : ""}">`;
         works.forEach((work, index) => {
             const imageUrl = work.image;
             html += `<article class="visual-work-card">
