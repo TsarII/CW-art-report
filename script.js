@@ -213,9 +213,14 @@ function createSection(data = null) {
         section.querySelectorAll(".original-field").forEach(field => {
             field.hidden = !(SECTION_INFO[typeSelect.value]?.original);
         });
+        section.querySelectorAll(".location-id-field").forEach(field => {
+            field.hidden = !["Фон", "Украшение фона"].includes(typeSelect.value);
+        });
         section.querySelectorAll(".work-card").forEach(work => {
             const originalField = work.querySelector(".original-field");
             if (originalField) originalField.hidden = !SECTION_INFO[typeSelect.value]?.original;
+            const locationField = work.querySelector(".location-id-field");
+            if (locationField) locationField.hidden = !["Фон", "Украшение фона"].includes(typeSelect.value);
             updateWorkType(work, typeSelect.value);
         });
         refresh();
@@ -280,6 +285,8 @@ function createWork(container, data = null, sectionType = "") {
     const proofInput = work.querySelector(".proof-link");
     const originalInput = work.querySelector(".original-link");
     const originalField = work.querySelector(".original-field");
+    const locationIdInput = work.querySelector(".location-id");
+    const locationIdField = work.querySelector(".location-id-field");
     const previewWrap = work.querySelector(".image-preview-wrap");
 
     if (data) {
@@ -287,12 +294,14 @@ function createWork(container, data = null, sectionType = "") {
         idInput.value = data.id || "";
         proofInput.value = data.proof || "";
         originalInput.value = data.original || "";
+        locationIdInput.value = data.locationId || "";
         work.querySelectorAll(".stage-checkbox").forEach(box => {
             if (box.dataset.stage === "static") box.checked = true;
             else box.checked = data.stages ? data.stages.includes(box.dataset.stage) : false;
         });
     }
     originalField.hidden = !SECTION_INFO[sectionType]?.original;
+    locationIdField.hidden = !["Фон", "Украшение фона"].includes(sectionType);
     updateWorkType(work, sectionType);
 
     function getPreviewUrls() {
@@ -323,7 +332,7 @@ function createWork(container, data = null, sectionType = "") {
         });
     }
 
-    [imageInput, idInput, proofInput, originalInput].forEach(input => input.addEventListener("input", () => {
+    [imageInput, idInput, proofInput, originalInput, locationIdInput].forEach(input => input.addEventListener("input", () => {
         updatePreview();
         refreshAndSave();
     }));
@@ -361,7 +370,8 @@ function collectData() {
             id: work.querySelector(".work-id").value.trim(),
             stages: [...work.querySelectorAll(".stage-checkbox:checked")].map(box => box.dataset.stage),
             proof: work.querySelector(".proof-link").value.trim(),
-            original: work.querySelector(".original-link").value.trim()
+            original: work.querySelector(".original-link").value.trim(),
+            locationId: work.querySelector(".location-id").value.trim()
         }))
     }));
 
@@ -486,6 +496,7 @@ function generateBBCode(data) {
 function makeWorkCell(work, number) {
     const heading = `${number}.`;
     let cell = `[td]${heading} [img]${work.image}[/img]\n\n[url]${work.image}[/url]`;
+    if (work.locationId) cell += `\n\nИсходник фона: [url]https://catwar.net/cw3/spacoj/${work.locationId}.jpg[/url]`;
     if (work.original) cell += `\n\nОригинал: [url]${work.original}[/url]`;
     if (work.proof) cell += `\n\nДоказательство: [url]${work.proof}[/url]`;
     return cell + "[/td]";
@@ -509,6 +520,10 @@ function generateVisualReport(data) {
                     <img src="${escapeHTML(imageUrl)}" alt="Работа ${index + 1}" onerror="this.style.display='none';this.nextElementSibling.hidden=false">
                 </a>
                 <p class="preview-image-error" hidden>Изображение не удалось загрузить. Проверь ссылку.</p>`;
+            if (work.locationId) {
+                const locationUrl = `https://catwar.net/cw3/spacoj/${work.locationId}.jpg`;
+                html += `<p><b>Исходник фона:</b> <a href="${escapeHTML(locationUrl)}" target="_blank" rel="noopener noreferrer">Открыть</a></p>`;
+            }
             if (work.original) html += `<p><b>Оригинал:</b> <a href="${escapeHTML(work.original)}" target="_blank" rel="noopener noreferrer">Открыть</a></p>`;
             if (work.proof) html += `<p><b>Доказательство:</b> <a href="${escapeHTML(work.proof)}" target="_blank" rel="noopener noreferrer">Открыть</a></p>`;
             html += `</article>`;
